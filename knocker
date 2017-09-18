@@ -1,0 +1,35 @@
+#!/usr/bin/python
+
+import socket
+import time
+import sys
+
+if(len(sys.argv) < 3) :
+        print 'Usage : python client.py config-file IPaddress'
+        sys.exit()
+		
+contents = open(sys.argv[1])
+array = []
+index=0
+for line in contents:
+	array.append(line)
+	#print(array[index])
+	index+=1
+	
+#print array
+
+try:
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+except socket.error:
+    print 'Failed to create socket'
+    sys.exit()
+
+for port in array:
+	try:
+		host=str(sys.argv[2])
+		port= int(port)
+		print 'Trying to connect:' + sys.argv[2] + ':' + str(port)
+		time.sleep(2)
+		s.sendto("ye mera hai...!!!",(host, port))
+	except socket.error, msg:
+		#print 'refused' + str(msg[0]) + ' Message ' + msg[1]

